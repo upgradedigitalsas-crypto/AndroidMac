@@ -42,13 +42,23 @@ enum AndroidConfig {
     static let lcdWidth = 1080
     static let lcdHeight = 2400
 
+    /// GPU rendering backend, used both for the `-gpu` flag and `hw.gpu.mode`
+    /// (kept in sync so they can't disagree).
+    ///
+    /// `auto` = the emulator picks the fastest backend it can actually drive on
+    /// this host (Metal/host on Apple Silicon) and falls back on its own instead
+    /// of rendering a blank window. Change to `swiftshader_indirect` if you still
+    /// get a blank/white screen (pure software, slower but always renders), or to
+    /// `host` to force the GPU path.
+    static let gpuMode = "auto"
+
     /// Written verbatim into the AVD's `config.ini`. Existing keys are replaced,
     /// not duplicated. `hw.keyboard=yes` is what lets you type into the emulator
     /// window straight from the Mac keyboard instead of the on-screen keyboard.
     static var avdHardwareConfig: [String: String] {
         [
             "hw.gpu.enabled": "yes",
-            "hw.gpu.mode": "host",
+            "hw.gpu.mode": gpuMode,
             "hw.cpu.ncore": "\(cpuCores)",
             "hw.ramSize": "\(ramMB)",
             "vm.heapSize": "\(vmHeapMB)",
@@ -64,24 +74,33 @@ enum AndroidConfig {
         ]
     }
 
-    /// Emulator CLI flags. `-gpu host` + `-cores` are the main speed levers on
-    /// Apple Silicon; snapshots are left at their default so Quick Boot and the
-    /// user's Play Store login persist between sessions.
+    /// Emulator CLI flags. `-gpu` + `-cores` are the main speed levers on Apple
+    /// Silicon; snapshots are left at their default so Quick Boot and the user's
+    /// Play Store login persist between sessions.
+    ///
+    /// The boot animation is deliberately kept (no `-no-boot-anim`) — it is the
+    /// only on-screen signal that a cold boot is progressing rather than hung,
+    /// and it costs ~2 s.
     ///
     /// `-dns-server` is pinned to public resolvers: the emulator otherwise
     /// inherits the host's DNS, and split-tunnel VPNs / corporate resolvers are
     /// the usual reason Google sign-in fails with "couldn't communicate with
     /// Google servers".
-    static var emulatorLaunchArgs: [String] {
-        [
-            "-gpu", "host",
+    static func emulatorLaunchArgs(coldBoot: Bool = false) -> [String] {
+        var args = [
+            "-gpu", gpuMode,
             "-accel", "on",
             "-cores", "\(cpuCores)",
             "-memory", "\(ramMB)",
-            "-no-boot-anim",
             "-netdelay", "none",
             "-netspeed", "full",
             "-dns-server", "8.8.8.8,8.8.4.4",
         ]
+        if coldBoot {
+            // Ignore any saved snapshot for this run — the fix for a window that
+            // opens blank/white because a broken GPU state got snapshotted.
+            args += ["-no-snapshot-load"]
+        }
+        return args
     }
 }

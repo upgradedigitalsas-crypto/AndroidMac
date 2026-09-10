@@ -65,8 +65,13 @@ struct EmulatorControlView: View {
                 Button("STOP ANDROID") { emulator.stop() }
                     .buttonStyle(.borderedProminent).tint(.red)
             } else {
-                Button("START ANDROID") { emulator.start(avdName: avdName) }
-                    .buttonStyle(.borderedProminent).tint(.green)
+                VStack(spacing: 6) {
+                    Button("START ANDROID") { emulator.start(avdName: avdName) }
+                        .buttonStyle(.borderedProminent).tint(.green)
+                    Button("Cold boot") { emulator.start(avdName: avdName, coldBoot: true) }
+                        .buttonStyle(.link)
+                        .help("Start ignoring the saved snapshot — use this if the screen opens blank/white.")
+                }
             }
 
             if let error = emulator.lastError {

@@ -22,8 +22,9 @@
 - [x] **AVD:** created from the Play Store ARM64 image; `config.ini` gets the
       performance + `hw.keyboard=yes` settings, with keys replaced (not
       duplicated) and re-applied on every launch.
-- [x] **Start emulator:** launched with `-gpu host -accel on -cores 4 -memory 4096
-      -no-boot-anim`; boot polled via `adb ... getprop sys.boot_completed` for ~6 min.
+- [x] **Start emulator:** launched with `-gpu auto -accel on -cores 4 -memory 4096`;
+      boot polled via `adb ... getprop sys.boot_completed` for ~6 min. **Cold boot**
+      button adds `-no-snapshot-load` to recover from a blank/white window.
 - [x] **Host keyboard:** typing in the emulator window works directly; the app's
       text field also injects text/Enter over `adb`.
 - [x] **Nav keys:** Back (4), Home (3), Recents (187) via `adb shell input keyevent`.

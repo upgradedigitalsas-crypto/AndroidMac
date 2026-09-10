@@ -11,8 +11,11 @@
 - **Login:** performed by the user inside the Android emulator; the app never handles Google credentials.
 
 ## 3. Performance tuning (Apple Silicon)
-- All tuning lives in `AndroidConfig`. The emulator is launched with `-gpu host -accel on -cores 4 -memory 4096 -no-boot-anim`.
-- The AVD `config.ini` gets `hw.gpu.mode=host`, `hw.cpu.ncore=4`, `hw.ramSize=4096`, `vm.heapSize=512`, `disk.dataPartition.size=8192M`.
+- All tuning lives in `AndroidConfig`. The emulator is launched with `-gpu auto -accel on -cores 4 -memory 4096`.
+- `gpuMode` (`auto` by default) is used for both the `-gpu` flag and `hw.gpu.mode` so they can't disagree. `auto` lets the emulator pick Metal/host and fall back itself instead of rendering a blank window; `swiftshader_indirect` is the software fallback for machines where the GPU path still comes up blank.
+- The boot animation is kept — it's the only signal that a cold boot is progressing vs hung.
+- `start(coldBoot:)` adds `-no-snapshot-load` for one run; the **Cold boot** button uses it to recover from a blank window caused by a snapshotted bad GPU state.
+- The AVD `config.ini` gets `hw.gpu.mode=auto`, `hw.cpu.ncore=4`, `hw.ramSize=4096`, `vm.heapSize=512`, `disk.dataPartition.size=8192M`.
 - `AVDManagerService.applyHardwareConfig` **replaces** keys instead of appending, fixing an earlier bug where duplicate keys in `config.ini` made the emulator ignore the tuning. It is re-applied on every launch so old AVDs are upgraded in place.
 - Snapshots are left at their default (Quick Boot) so warm starts are fast and the Play Store login persists.
 

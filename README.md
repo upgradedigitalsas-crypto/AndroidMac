@@ -38,7 +38,7 @@ The emulator is launched and the AVD configured for speed on M-series hardware
 
 | Setting | Value | Why |
 |---|---|---|
-| `-gpu host` / `hw.gpu.mode=host` | Metal-backed rendering | biggest single speed-up vs software GL |
+| `-gpu auto` / `hw.gpu.mode=auto` | emulator picks Metal/host, falls back on its own | fast GPU path without risking a blank window |
 | `-cores` / `hw.cpu.ncore` | 4 | smooth guest UI, host stays responsive |
 | `-memory` / `hw.ramSize` | 4096 MB | avoids guest swapping |
 | `vm.heapSize` | 512 MB | fewer ART GC pauses |
@@ -94,7 +94,12 @@ for local use (`xattr -dr com.apple.quarantine AndroidMac.app` on first open).
 - **Stuck on "Android environment incomplete"** — the setup step now always
   clears its spinner and shows the underlying error with a **Retry** button.
   The most common cause is a missing JDK: `brew install openjdk@17`.
-- **Emulator is slow** — confirm `hw.gpu.mode=host` in
+- **Emulator window opens blank / white** — almost always a bad saved snapshot
+  or a GPU-mode mismatch. Click **Cold boot** (starts with `-no-snapshot-load`).
+  If it still happens, set `AndroidConfig.gpuMode` to `swiftshader_indirect`
+  (software, always renders) and cold boot once. Removing
+  `~/.android/avd/Antigravity_Phone.avd/snapshots/` also clears a poisoned snapshot.
+- **Emulator is slow** — confirm `hw.gpu.mode=auto` (or `host`) in
   `~/.android/avd/Antigravity_Phone.avd/config.ini`; if you changed it, delete
   the AVD and let the app recreate it. Close other heavy GPU apps.
 - **Emulator doesn't start** — check `~/Library/Android/sdk/emulator/emulator

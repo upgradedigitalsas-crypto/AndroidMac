@@ -110,9 +110,11 @@ class EmulatorService: ObservableObject {
         self.adbService = ADBService(sdkRoot: sdkRoot)
     }
 
-    func start(avdName: String) {
+    /// - Parameter coldBoot: ignore any saved snapshot for this run. Use it when
+    ///   the emulator window opens blank/white (a poisoned GPU snapshot).
+    func start(avdName: String, coldBoot: Bool = false) {
         guard !isRunning else { return }
-        status = "Starting emulator…"
+        status = coldBoot ? "Cold booting emulator…" : "Starting emulator…"
         isRunning = true
         lastError = nil
 
@@ -122,7 +124,7 @@ class EmulatorService: ObservableObject {
 
         let emulatorURL = emulator
         let env = AndroidEnvironment.toolchain(sdkRoot: sdkRoot)
-        let args = ["-avd", avdName] + AndroidConfig.emulatorLaunchArgs
+        let args = ["-avd", avdName] + AndroidConfig.emulatorLaunchArgs(coldBoot: coldBoot)
 
         let proc = Process()
         proc.executableURL = emulatorURL
