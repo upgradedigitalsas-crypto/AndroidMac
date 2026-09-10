@@ -67,6 +67,11 @@ enum AndroidConfig {
     /// Emulator CLI flags. `-gpu host` + `-cores` are the main speed levers on
     /// Apple Silicon; snapshots are left at their default so Quick Boot and the
     /// user's Play Store login persist between sessions.
+    ///
+    /// `-dns-server` is pinned to public resolvers: the emulator otherwise
+    /// inherits the host's DNS, and split-tunnel VPNs / corporate resolvers are
+    /// the usual reason Google sign-in fails with "couldn't communicate with
+    /// Google servers".
     static var emulatorLaunchArgs: [String] {
         [
             "-gpu", "host",
@@ -76,6 +81,7 @@ enum AndroidConfig {
             "-no-boot-anim",
             "-netdelay", "none",
             "-netspeed", "full",
+            "-dns-server", "8.8.8.8,8.8.4.4",
         ]
     }
 }

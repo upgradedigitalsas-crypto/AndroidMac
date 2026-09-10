@@ -51,6 +51,8 @@ struct EmulatorControlView: View {
 
     @State private var showFileImporter = false
     @State private var typeText = ""
+    @State private var gsfID: String?
+    @State private var googleBusy = false
     @FocusState private var typeFieldFocused: Bool
 
     private var isReady: Bool { emulator.status.contains("Ready") }
@@ -76,6 +78,8 @@ struct EmulatorControlView: View {
 
             if isReady {
                 keyboardBar
+                Divider()
+                googleSignInBar
                 Divider()
                 navigationBar
             }
@@ -119,6 +123,36 @@ struct EmulatorControlView: View {
             }
             Text("Tip: the emulator window also accepts your Mac keyboard directly (hardware keyboard is enabled).")
                 .font(.caption2).foregroundColor(.secondary)
+        }
+    }
+
+    /// Recover from "can't sign in to Google / device not certified".
+    private var googleSignInBar: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Google sign-in").font(.caption).foregroundColor(.secondary)
+            HStack(spacing: 8) {
+                Button("Register device") {
+                    NSWorkspace.shared.open(URL(string: "https://www.google.com/android/uncertified")!)
+                    Task { gsfID = await emulator.adbService.googleServicesFrameworkID() }
+                }
+                .help("Opens the Play certification page. Paste the ID below (or dial *#*#8255#*#* in the emulator).")
+
+                Button("Reset & reboot") {
+                    googleBusy = true
+                    Task {
+                        try? await emulator.adbService.resetGoogleLogin()
+                        googleBusy = false
+                    }
+                }
+                .disabled(googleBusy)
+                .help("Clears cached Google login + Play Store data, then reboots.")
+
+                if googleBusy { ProgressView().controlSize(.small) }
+            }
+            if let gsfID {
+                Text("GSF ID: \(gsfID)")
+                    .font(.caption2).textSelection(.enabled).foregroundColor(.secondary)
+            }
         }
     }
 

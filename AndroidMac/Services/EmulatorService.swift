@@ -66,6 +66,30 @@ class ADBService {
 
     /// Ask the emulator to save its Quick Boot snapshot and exit cleanly.
     func emuKill() async { _ = try? await run(["emu", "kill"], timeout: 15) }
+
+    // MARK: Google sign-in recovery
+
+    /// The Google Services Framework Android ID, needed to register the emulator
+    /// at google.com/android/uncertified when sign-in is blocked as "not
+    /// certified". Returns `nil` when the provider isn't readable (dial
+    /// `*#*#8255#*#*` in the emulator to read it manually in that case).
+    func googleServicesFrameworkID() async -> String? {
+        let query = "content query --uri content://com.google.android.gsf/gservices "
+                  + "--projection value --where \"name=\\'android_id\\'\""
+        guard let r = try? await run(["shell", query], timeout: 15), r.isSuccess else { return nil }
+        // Output looks like: Row: 0 value=3f1c...
+        guard let range = r.stdout.range(of: "value=") else { return nil }
+        let id = r.stdout[range.upperBound...].prefix { $0 != " " && $0 != "\n" }
+        return id.isEmpty ? nil : String(id)
+    }
+
+    /// Clear the cached Google login state and reboot so the sign-in flow starts
+    /// fresh (run after registering the device or updating Play services).
+    func resetGoogleLogin() async throws {
+        _ = try? await run(["shell", "pm", "clear", "com.google.android.gsf.login"], timeout: 20)
+        _ = try? await run(["shell", "pm", "clear", "com.android.vending"], timeout: 20)
+        try await run(["reboot"], timeout: 20)
+    }
 }
 
 @MainActor

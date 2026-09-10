@@ -101,3 +101,7 @@ for local use (`xattr -dr com.apple.quarantine AndroidMac.app` on first open).
   -avd Antigravity_Phone -verbose` output in a terminal for the real error.
 - **Boot takes a long time on first run** — expected for a cold boot; subsequent
   starts use the Quick Boot snapshot.
+- **Can't sign in to Google / "device not certified"** — see
+  [`docs/GOOGLE_SIGN_IN.md`](docs/GOOGLE_SIGN_IN.md). The emulator now forces
+  public DNS (`-dns-server 8.8.8.8,8.8.4.4`), which fixes most cases; the app's
+  **Register device** / **Reset & reboot** buttons cover the rest.
