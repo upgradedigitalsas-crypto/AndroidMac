@@ -52,6 +52,16 @@ enum AndroidConfig {
     /// `host` to force the GPU path.
     static let gpuMode = "auto"
 
+    /// Give the guest a *virtual* Bluetooth adapter (`-feature Bluetooth`).
+    ///
+    /// This is emulator-to-emulator BLE only (experimental, needs emulator
+    /// 33.1.20+ and an API 33+ image). It does **not** bridge to the Mac's
+    /// Bluetooth or to real devices, so it will not help passkey/QR "scan with
+    /// your phone" flows — those need real BLE proximity. Its only real use is
+    /// apps that hide features or crash when `BluetoothAdapter` is null.
+    /// Off by default because the flag is experimental and can hurt stability.
+    static let enableVirtualBluetooth = false
+
     /// Written verbatim into the AVD's `config.ini`. Existing keys are replaced,
     /// not duplicated. `hw.keyboard=yes` is what lets you type into the emulator
     /// window straight from the Mac keyboard instead of the on-screen keyboard.
@@ -100,6 +110,9 @@ enum AndroidConfig {
             // Ignore any saved snapshot for this run — the fix for a window that
             // opens blank/white because a broken GPU state got snapshotted.
             args += ["-no-snapshot-load"]
+        }
+        if enableVirtualBluetooth {
+            args += ["-feature", "Bluetooth"]
         }
         return args
     }

@@ -38,6 +38,24 @@ If you see "This device isn't Play Protect certified" or sign-in still fails:
    `com.google.android.gsf.login` + Play Store data and reboots).
 5. Add the account again.
 
+## 4b. It's asking for a passkey / "Scan this QR code"
+
+The emulator has **no real Bluetooth**, so the hybrid passkey flow (scan the QR
+with your phone, confirm over BLE proximity) can't complete — and enabling the
+emulator's virtual Bluetooth doesn't help, because that's emulator-to-emulator
+only, not host or real devices.
+
+Use a different second factor instead:
+
+- On the passkey screen, click **Try another way** →
+  - **Enter your password**, or
+  - **Get a verification code** (SMS / Google Authenticator) and type the 6 digits
+    with your Mac keyboard, or
+  - **Tap Yes on your phone** (Google prompt) — this is a push over the internet
+    and needs no Bluetooth.
+- If the account has *only* passkeys registered, add a password or an authenticator
+  app to it temporarily at <https://myaccount.google.com/security>.
+
 ## 5. Still stuck
 - Recreate the AVD (delete `~/.android/avd/Antigravity_Phone.avd*`, relaunch the
   app) to get a clean image, then repeat 3–4.
