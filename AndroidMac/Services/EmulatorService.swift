@@ -2,134 +2,165 @@ import Foundation
 
 class ADBService {
     let adb: URL
-    
+    let sdkRoot: URL
+
     init(sdkRoot: URL) {
+        self.sdkRoot = sdkRoot
         self.adb = sdkRoot.appendingPathComponent("platform-tools/adb")
     }
-    
-    func startServer() async throws {
-        _ = try await ProcessRunner.runCommand(adb, arguments: ["start-server"])
+
+    private var env: [String: String] { AndroidEnvironment.toolchain(sdkRoot: sdkRoot) }
+
+    @discardableResult
+    private func run(_ args: [String], timeout: TimeInterval = 30) async throws -> ProcessResult {
+        try await ProcessRunner.runCommand(adb, arguments: args, environment: env, timeout: timeout)
     }
-    
-    func waitForDevice() async throws {
-        _ = try await ProcessRunner.runCommand(adb, arguments: ["wait-for-device"])
-    }
-    
+
+    func startServer() async throws { try await run(["start-server"]) }
+
+    func waitForDevice() async throws { try await run(["wait-for-device"], timeout: 180) }
+
     func isBootCompleted() async -> Bool {
-        do {
-            let result = try await ProcessRunner.runCommand(adb, arguments: ["shell", "getprop", "sys.boot_completed"])
-            return result.stdout.trimmingCharacters(in: .whitespacesAndNewlines) == "1"
-        } catch {
+        guard let result = try? await run(["shell", "getprop", "sys.boot_completed"], timeout: 10) else {
             return false
         }
+        return result.stdout.trimmingCharacters(in: .whitespacesAndNewlines) == "1"
     }
-    
+
     func sendKeyEvent(_ code: Int) async throws {
-        _ = try await ProcessRunner.runCommand(adb, arguments: ["shell", "input", "keyevent", "\(code)"])
+        try await run(["shell", "input", "keyevent", "\(code)"])
     }
-    
+
+    /// Type a string into whatever field currently has focus in the guest.
+    /// `adb shell input text` needs spaces encoded as `%s` and can't carry newlines.
+    func inputText(_ text: String) async throws {
+        let lines = text.components(separatedBy: "\n")
+        for (index, line) in lines.enumerated() {
+            if !line.isEmpty {
+                let encoded = line
+                    .replacingOccurrences(of: " ", with: "%s")
+                    .replacingOccurrences(of: "\"", with: "\\\"")
+                try await run(["shell", "input", "text", encoded])
+            }
+            if index < lines.count - 1 {
+                try await sendKeyEvent(66)   // KEYCODE_ENTER
+            }
+        }
+    }
+
     func installAPK(url: URL) async throws -> ProcessResult {
-        return try await ProcessRunner.runCommand(adb, arguments: ["install", "-r", url.path])
+        try await run(["install", "-r", url.path], timeout: 300)
     }
-    
+
     func takeScreenshot(saveTo path: String) async throws {
-        // Screenshot inside emulator then pull it
-        _ = try await ProcessRunner.runCommand(adb, arguments: ["shell", "screencap", "-p", "/sdcard/screen.png"])
-        _ = try await ProcessRunner.runCommand(adb, arguments: ["pull", "/sdcard/screen.png", path])
-        _ = try await ProcessRunner.runCommand(adb, arguments: ["shell", "rm", "/sdcard/screen.png"])
+        try await run(["shell", "screencap", "-p", "/sdcard/screen.png"])
+        try await run(["pull", "/sdcard/screen.png", path], timeout: 60)
+        try await run(["shell", "rm", "/sdcard/screen.png"])
     }
-    
+
     func getLogs() async throws -> String {
-        let result = try await ProcessRunner.runCommand(adb, arguments: ["logcat", "-d"])
-        return result.stdout
+        try await run(["logcat", "-d"], timeout: 30).stdout
     }
-    
-    func clearLogs() async throws {
-        _ = try await ProcessRunner.runCommand(adb, arguments: ["logcat", "-c"])
-    }
+
+    func clearLogs() async throws { try await run(["logcat", "-c"]) }
+
+    /// Ask the emulator to save its Quick Boot snapshot and exit cleanly.
+    func emuKill() async { _ = try? await run(["emu", "kill"], timeout: 15) }
 }
 
+@MainActor
 class EmulatorService: ObservableObject {
     let sdkRoot: URL
     let emulator: URL
     let adbService: ADBService
-    
+
     @Published var isRunning = false
     @Published var status = "Stopped"
-    
-    var process: Process?
-    
+    @Published var lastError: String?
+
+    private var process: Process?
+
     init(sdkRoot: URL) {
         self.sdkRoot = sdkRoot
         self.emulator = sdkRoot.appendingPathComponent("emulator/emulator")
         self.adbService = ADBService(sdkRoot: sdkRoot)
     }
-    
+
     func start(avdName: String) {
-        status = "Starting Emulator..."
+        guard !isRunning else { return }
+        status = "Starting emulator…"
         isRunning = true
-        
-        DispatchQueue.global(qos: .userInitiated).async {
-            self.process = Process()
-            self.process?.executableURL = self.emulator
-            // Launch emulator
-            self.process?.arguments = ["-avd", avdName, "-netdelay", "none", "-netspeed", "full"]
-            
+        lastError = nil
+
+        // Make sure host-keyboard + GPU tuning are present even for AVDs that a
+        // previous version created without them.
+        AVDManagerService(sdkRoot: sdkRoot).applyHardwareConfig(to: avdName)
+
+        let emulatorURL = emulator
+        let env = AndroidEnvironment.toolchain(sdkRoot: sdkRoot)
+        let args = ["-avd", avdName] + AndroidConfig.emulatorLaunchArgs
+
+        let proc = Process()
+        proc.executableURL = emulatorURL
+        proc.arguments = args
+        var procEnv = ProcessInfo.processInfo.environment
+        for (k, v) in env { procEnv[k] = v }
+        proc.environment = procEnv
+        self.process = proc
+
+        do {
+            try proc.run()
+        } catch {
+            self.isRunning = false
+            self.status = "Failed to start"
+            self.lastError = error.localizedDescription
+            return
+        }
+
+        // Watch for process exit (Task inherits the main actor).
+        Task { [weak self] in
+            while proc.isRunning { try? await Task.sleep(nanoseconds: 500_000_000) }
+            guard let self else { return }
+            self.isRunning = false
+            self.status = "Stopped"
+            self.process = nil
+        }
+
+        // Poll for boot completion.
+        Task { [weak self] in
+            guard let self else { return }
             do {
-                try self.process?.run()
-                
-                Task {
-                    do {
-                        try await self.adbService.startServer()
-                        try await self.adbService.waitForDevice()
-                        
-                        DispatchQueue.main.async {
-                            self.status = "Waiting for Android boot..."
-                        }
-                        
-                        var booted = false
-                        for _ in 0..<60 {
-                            if await self.adbService.isBootCompleted() {
-                                booted = true
-                                break
-                            }
-                            try await Task.sleep(nanoseconds: 2_000_000_000)
-                        }
-                        
-                        DispatchQueue.main.async {
-                            if booted {
-                                self.status = "● Ready"
-                            } else {
-                                self.status = "Error: Boot timeout"
-                                self.isRunning = false
-                            }
-                        }
-                    } catch {
-                        DispatchQueue.main.async {
-                            self.status = "Error: \(error.localizedDescription)"
-                            self.isRunning = false
-                        }
+                try await self.adbService.startServer()
+                try await self.adbService.waitForDevice()
+                self.status = "Waiting for Android to boot…"
+
+                for _ in 0..<180 {   // up to ~6 min for a cold boot on first run
+                    if await self.adbService.isBootCompleted() {
+                        self.status = "● Ready"
+                        return
                     }
+                    try await Task.sleep(nanoseconds: 2_000_000_000)
                 }
-                
-                self.process?.waitUntilExit()
-                
-                DispatchQueue.main.async {
-                    self.isRunning = false
-                    self.status = "Stopped"
-                }
+                // Timed out waiting, but the emulator process is still alive —
+                // keep it running rather than forcing the user to restart.
+                self.status = "Booting is taking longer than usual…"
             } catch {
-                DispatchQueue.main.async {
-                    self.status = "Failed to start"
-                    self.isRunning = false
-                }
+                self.status = "Error: \(error.localizedDescription)"
+                self.lastError = error.localizedDescription
             }
         }
     }
-    
+
     func stop() {
-        process?.terminate()
-        isRunning = false
-        status = "Stopped"
+        status = "Stopping…"
+        let adb = adbService
+        let proc = process
+        Task {   // inherits the main actor from @MainActor class
+            await adb.emuKill()          // triggers Quick Boot snapshot save
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            proc?.terminate()
+            self.isRunning = false
+            self.status = "Stopped"
+        }
     }
 }

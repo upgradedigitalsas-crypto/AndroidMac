@@ -1,127 +1,180 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct MainView: View {
     @ObservedObject var avdManager: AVDManagerViewModel
-    @State private var showFileImporter = false
-    
+
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text("Android Phone")
-                    .font(.title2.bold())
-                Spacer()
-                Button(action: {}) {
-                    Image(systemName: "gearshape")
-                }
-                .buttonStyle(.plain)
-            }
-            .padding()
-            .background(Color(NSColor.windowBackgroundColor))
-            
+            header
             Divider()
-            
-            // Status and Start
-            VStack(spacing: 20) {
-                if avdManager.isCreating {
-                    ProgressView("Creating Android Device...")
-                } else if let avd = avdManager.selectedAVD {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Device: \(avd)")
-                        Text("Architecture: arm64")
-                        Text("Status: \(avdManager.emulatorService?.status ?? "Unknown")")
-                            .foregroundColor((avdManager.emulatorService?.status.contains("Ready") == true) ? .green : .secondary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .cornerRadius(8)
-                    
-                    if let emulator = avdManager.emulatorService {
-                        if emulator.isRunning {
-                            Button("STOP ANDROID") {
-                                emulator.stop()
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.red)
-                        } else {
-                            Button("START ANDROID") {
-                                emulator.start(avdName: avd)
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.green)
-                        }
-                    }
-                }
-            }
-            .padding()
-            
-            Spacer()
-            
-            // Controls
-            if avdManager.emulatorService?.status.contains("Ready") == true {
-                Divider()
-                HStack(spacing: 20) {
-                    ControlButton(icon: "arrow.left", action: { sendKey(4) }) // KEYCODE_BACK
-                    ControlButton(icon: "circle", action: { sendKey(3) }) // KEYCODE_HOME
-                    ControlButton(icon: "square", action: { sendKey(187) }) // KEYCODE_APP_SWITCH
-                    
-                    Divider().frame(height: 20)
-                    
-                    ControlButton(icon: "rotate.left", action: {
-                        // Rotation isn't universally mapped to a simple key in emulator, but usually requires telnet or specific commands.
-                        // We'll map standard keyevents where possible.
-                    })
-                    ControlButton(icon: "camera", action: takeScreenshot)
-                    
-                    Button("APK") {
-                        showFileImporter = true
-                    }
-                    .buttonStyle(.bordered)
+
+            if avdManager.isCreating {
+                Spacer()
+                ProgressView("Creating Android device…")
+                Spacer()
+            } else if let avd = avdManager.selectedAVD, let emulator = avdManager.emulatorService {
+                EmulatorControlView(emulator: emulator, avdName: avd)
+            } else {
+                Spacer()
+                VStack(spacing: 12) {
+                    Text(avdManager.errorMessage ?? "No Android device available.")
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(avdManager.errorMessage == nil ? .secondary : .red)
+                        .textSelection(.enabled)
+                    Button("Create default device") { avdManager.createDefault() }
+                        .buttonStyle(.borderedProminent)
                 }
                 .padding()
-                .background(Color(NSColor.windowBackgroundColor))
-            }
-        }
-        .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.item]) { result in
-            switch result {
-            case .success(let url):
-                installAPK(url: url)
-            case .failure(let error):
-                print(error)
+                Spacer()
             }
         }
     }
-    
-    func sendKey(_ code: Int) {
-        Task {
-            try? await avdManager.emulatorService?.adbService.sendKeyEvent(code)
+
+    private var header: some View {
+        HStack {
+            Text("Android Phone")
+                .font(.title2.bold())
+            Spacer()
+            Image(systemName: "gearshape")
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .background(Color(NSColor.windowBackgroundColor))
+    }
+}
+
+/// Everything that needs to react live to the emulator's state.
+struct EmulatorControlView: View {
+    @ObservedObject var emulator: EmulatorService
+    let avdName: String
+
+    @State private var showFileImporter = false
+    @State private var typeText = ""
+    @FocusState private var typeFieldFocused: Bool
+
+    private var isReady: Bool { emulator.status.contains("Ready") }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            deviceCard
+
+            if emulator.isRunning {
+                Button("STOP ANDROID") { emulator.stop() }
+                    .buttonStyle(.borderedProminent).tint(.red)
+            } else {
+                Button("START ANDROID") { emulator.start(avdName: avdName) }
+                    .buttonStyle(.borderedProminent).tint(.green)
+            }
+
+            if let error = emulator.lastError {
+                Text(error).font(.footnote).foregroundColor(.red)
+                    .multilineTextAlignment(.center).textSelection(.enabled)
+            }
+
+            Spacer()
+
+            if isReady {
+                keyboardBar
+                Divider()
+                navigationBar
+            }
+        }
+        .padding()
+        .fileImporter(isPresented: $showFileImporter,
+                      allowedContentTypes: [UTType(filenameExtension: "apk") ?? .item]) { result in
+            if case .success(let url) = result { installAPK(url: url) }
         }
     }
-    
-    func takeScreenshot() {
-        Task {
-            let path = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Desktop/Screenshot-\(Date().timeIntervalSince1970).png")
-            try? await avdManager.emulatorService?.adbService.takeScreenshot(saveTo: path.path)
+
+    private var deviceCard: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Device: \(avdName)")
+            Text("Architecture: arm64 · GPU: host")
+            Text("Status: \(emulator.status)")
+                .foregroundColor(isReady ? .green : .secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(8)
+    }
+
+    /// Type into the guest straight from the Mac keyboard.
+    private var keyboardBar: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Type with your Mac keyboard")
+                .font(.caption).foregroundColor(.secondary)
+            HStack(spacing: 8) {
+                TextField("Text to send to the focused field…", text: $typeText)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($typeFieldFocused)
+                    .onSubmit(sendText)
+                Button("Send", action: sendText)
+                    .disabled(typeText.isEmpty)
+                Button {
+                    Task { try? await emulator.adbService.sendKeyEvent(66) }
+                } label: { Image(systemName: "return") }
+                .help("Send Enter")
+            }
+            Text("Tip: the emulator window also accepts your Mac keyboard directly (hardware keyboard is enabled).")
+                .font(.caption2).foregroundColor(.secondary)
         }
     }
-    
-    func installAPK(url: URL) {
+
+    private var navigationBar: some View {
+        HStack(spacing: 20) {
+            ControlButton(icon: "chevron.backward", help: "Back") { sendKey(4) }
+            ControlButton(icon: "circle", help: "Home") { sendKey(3) }
+            ControlButton(icon: "square.on.square", help: "Recents") { sendKey(187) }
+            Divider().frame(height: 20)
+            ControlButton(icon: "camera", help: "Screenshot to Desktop", action: takeScreenshot)
+            Button("APK") { showFileImporter = true }
+                .buttonStyle(.bordered)
+                .help("Install an .apk on the device")
+        }
+    }
+
+    // MARK: Actions
+
+    private func sendText() {
+        let text = typeText
+        guard !text.isEmpty else { return }
+        typeText = ""
+        typeFieldFocused = true
+        Task { try? await emulator.adbService.inputText(text) }
+    }
+
+    private func sendKey(_ code: Int) {
+        Task { try? await emulator.adbService.sendKeyEvent(code) }
+    }
+
+    private func takeScreenshot() {
         Task {
-            let result = try? await avdManager.emulatorService?.adbService.installAPK(url: url)
-            print("APK Install result: \(result?.stdout ?? "") \(result?.stderr ?? "")")
+            let path = FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent("Desktop/Screenshot-\(Int(Date().timeIntervalSince1970)).png")
+            try? await emulator.adbService.takeScreenshot(saveTo: path.path)
+        }
+    }
+
+    private func installAPK(url: URL) {
+        Task {
+            let result = try? await emulator.adbService.installAPK(url: url)
+            print("APK install: \(result?.stdout ?? "") \(result?.stderr ?? "")")
         }
     }
 }
 
 struct ControlButton: View {
     let icon: String
+    var help: String = ""
     let action: () -> Void
+
     var body: some View {
         Button(action: action) {
-            Image(systemName: icon)
-                .font(.title3)
+            Image(systemName: icon).font(.title3)
         }
         .buttonStyle(.plain)
+        .help(help)
     }
 }

@@ -25,5 +25,10 @@ DerivedData
 # Custom
 AndroidMac.app/
 .module-cache/
+.buildtest/
 test_sdk
 xcodegen/
+AndroidMac_test
+*.dmg
+*.zip
+dist/
