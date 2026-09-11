@@ -102,6 +102,17 @@ class ADBService {
         }
     }
 
+    /// Launch an app's default activity by package name — what the cloud
+    /// dashboard's "Open" button on an installed app sends.
+    @discardableResult
+    func launchApp(packageName: String) async -> Bool {
+        guard let r = try? await run(
+            ["shell", "monkey", "-p", packageName, "-c", "android.intent.category.LAUNCHER", "1"],
+            timeout: 20
+        ) else { return false }
+        return r.isSuccess
+    }
+
     /// Best-effort account names/emails registered on the device (no credentials).
     /// Returns an empty list if `dumpsys account` isn't readable — never throws.
     func listAccountNames() async -> [String] {

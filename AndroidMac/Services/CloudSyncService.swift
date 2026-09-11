@@ -209,6 +209,12 @@ final class CloudSyncService: ObservableObject {
             return (true, "Typed text.")
         case "screenshot":
             return (true, "Screenshot refreshed.")   // capture happens in the syncNow() that follows
+        case "launch_app":
+            guard let package = command.payload, !package.isEmpty else {
+                return (false, "No package name provided.")
+            }
+            let ok = await emulator?.adbService.launchApp(packageName: package) ?? false
+            return (ok, ok ? "Launched \(package)." : "Could not launch \(package).")
         case "install_apk_url":
             guard let urlString = command.payload, let apkURL = URL(string: urlString) else {
                 return (false, "Invalid APK URL.")
