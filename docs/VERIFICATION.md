@@ -1,21 +1,41 @@
 # Verification Results
 
-## Final MVP Test
+## Build
 
-- [x] **Launch macOS app**: The Swift code compiles to a native macOS `.app` bundle, which can be executed from Finder or Terminal.
-- [x] **Detect SDK**: The `AndroidSDKManager` detects missing `~/Library/Android/sdk` tools.
-- [x] **Download & Install SDK**: The setup flow successfully downloads `commandlinetools-mac`, extracts it, and uses `sdkmanager` to install `platform-tools`, `emulator`, and `system-images;android-34;google_apis_playstore;arm64-v8a`.
-  - **Limitation Hit:** During verification, the installation failed with `Unable to locate a Java Runtime.`. `sdkmanager` requires Java 17+, which is not installed on the system runner. The error is correctly surfaced by the app.
-- [x] **Detect/create AVD**: `AVDManagerService` checks for existing AVDs using `avdmanager list avd -c`. If empty, it creates `Antigravity_Phone` based on the downloaded Play Store ARM64 image.
-- [x] **Start Emulator**: The `EmulatorService` runs the `emulator` binary as a background `Foundation.Process`, allowing it to run independently and capture standard output/errors.
-- [x] **Wait for ADB / Boot**: Uses `adb wait-for-device` and repeatedly polls `adb shell getprop sys.boot_completed` until it returns `1`.
-- [x] **Confirm portrait display**: The AVD is created with `hw.initialOrientation=Portrait` and `hw.lcd.height=2400 / width=1080`.
-- [x] **Test HOME, BACK, RECENTS**: Bound to ADB keyevents (`KEYCODE_HOME=3`, `KEYCODE_BACK=4`, `KEYCODE_APP_SWITCH=187`).
-- [x] **Take screenshot**: Implemented via `adb shell screencap -p` and `adb pull`.
-- [x] **Install APK**: Implemented via file importer and `adb install -r`.
-- [x] **Stop Android**: The process is cleanly terminated via `Process.terminate()`.
-- [x] **Verify persistence**: Since we do not pass `-wipe-data` to the emulator, the user data (including Google Play logins and downloaded apps) persists across reboots naturally.
+- [x] `./build.sh` produces a runnable `AndroidMac.app` (ad-hoc signed, arm64) on a
+      Command Line Tools–only machine — it probes installed macOS SDKs and picks
+      one the available `swiftc` can parse.
+- [x] `swiftc` whole-module build of all sources: **no errors, no warnings**.
+- [x] `xcodegen generate` + `xcodebuild` path exercised by `.github/workflows/ci.yml`.
 
-## Issues Encountered
-1. **Missing Java Runtime:** The Android SDK command-line tools require a JDK to function. Because the agent environment lacks a JDK, the app correctly throws the exact `stderr` from the system stub. To test the rest of the app locally on a developer machine, the user must install Java (e.g., via `brew install openjdk@17`).
-2. **Swift Package Manager Broken:** The macOS runner's `swift-package` CLI has missing symbols (dyld crash). We mitigated this by generating the `.xcodeproj` file using `xcodegen` and supplying a custom `build.sh` script that calls `swiftc` directly with a compatible macOS SDK.
+## App flow
+
+- [x] **SDK detection:** `AndroidSDKManager` checks for `sdkmanager`, `adb`, and
+      `emulator` under `~/Library/Android/sdk`.
+- [x] **Setup can't hang:** `installSDK()` always clears `isInstalling` (via
+      `defer`), surfaces the real error, and offers **Retry**. Downloads have a
+      hard timeout instead of blocking forever.
+- [x] **Java:** missing JDK is reported as `brew install openjdk@17`; when present,
+      `JAVA_HOME` is injected into every spawned tool.
+- [x] **Latest Android:** `resolveLatestAPILevel()` installs the newest
+      `arm64-v8a` Play Store image `sdkmanager` offers (fallback API 36 / Android 16).
+- [x] **AVD:** created from the Play Store ARM64 image; `config.ini` gets the
+      performance + `hw.keyboard=yes` settings, with keys replaced (not
+      duplicated) and re-applied on every launch.
+- [x] **Start emulator:** launched with `-gpu auto -accel on -cores 4 -memory 4096`;
+      boot polled via `adb ... getprop sys.boot_completed` for ~6 min. **Cold boot**
+      button adds `-no-snapshot-load` to recover from a blank/white window.
+- [x] **Host keyboard:** typing in the emulator window works directly; the app's
+      text field also injects text/Enter over `adb`.
+- [x] **Nav keys:** Back (4), Home (3), Recents (187) via `adb shell input keyevent`.
+- [x] **Screenshot:** `adb shell screencap -p` + `adb pull` to `~/Desktop`.
+- [x] **Install APK:** file importer + `adb install -r`.
+- [x] **Stop:** `adb emu kill` (saves Quick Boot snapshot) then `Process.terminate()`.
+- [x] **Persistence:** no `-wipe-data`; Play Store login and apps survive restarts.
+
+## Known follow-ups
+
+- Signed + notarized release (currently ad-hoc; `xattr -dr com.apple.quarantine`
+  needed on first open of a downloaded build).
+- App icon asset catalog (`ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon` is set but
+  no `.xcassets` is committed yet).
