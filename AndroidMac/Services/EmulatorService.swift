@@ -241,15 +241,20 @@ class EmulatorService: ObservableObject {
             environment: AndroidEnvironment.toolchain(sdkRoot: sdkRoot), timeout: 15
         ) else { return [] }
 
+        // Real output (macOS, emulator 33+):
+        //   Camera 'Cámara FaceTime HD' can be specified by label as 'webcam0'
+        //   or by id as '3642F2CD-...' and will use pixel format 'NV12'
+        // Group 1 = human-readable device name, group 2 = the "webcamN" label
+        // that actually goes into hw.camera.back/front.
         guard let regex = try? NSRegularExpression(
-            pattern: #"Camera '([^']+)' is connected to device '([^']+)'"#
+            pattern: #"Camera '([^']+)' can be specified by label as '([^']+)'"#
         ) else { return [] }
         let text = result.stdout
         var webcams: [Webcam] = []
         regex.enumerateMatches(in: text, range: NSRange(text.startIndex..., in: text)) { match, _, _ in
             guard let match,
-                  let idRange = Range(match.range(at: 1), in: text),
-                  let nameRange = Range(match.range(at: 2), in: text)
+                  let nameRange = Range(match.range(at: 1), in: text),
+                  let idRange = Range(match.range(at: 2), in: text)
             else { return }
             webcams.append(Webcam(id: String(text[idRange]), deviceName: String(text[nameRange])))
         }
