@@ -92,6 +92,8 @@ cat > "${APP_DIR}/Contents/Info.plist" <<EOF
     <key>LSApplicationCategoryType</key><string>public.app-category.developer-tools</string>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSHumanReadableCopyright</key><string>© 2026 Antigravity</string>
+    <key>NSCameraUsageDescription</key><string>AndroidMac routes a real webcam into the Android emulator's camera apps when you pick one in Camera source…</string>
+    <key>NSMicrophoneUsageDescription</key><string>AndroidMac routes your microphone into the Android emulator when an app records audio.</string>
 </dict>
 </plist>
 EOF

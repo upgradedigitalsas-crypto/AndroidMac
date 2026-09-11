@@ -16,6 +16,8 @@ targets:
         INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 Antigravity"
         INFOPLIST_KEY_NSPrincipalClass: "NSApplication"
         INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.developer-tools"
+        INFOPLIST_KEY_NSCameraUsageDescription: "AndroidMac routes a real webcam into the Android emulator's camera apps when you pick one in Camera source…"
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "AndroidMac routes your microphone into the Android emulator when an app records audio."
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
         CODE_SIGN_IDENTITY: "-"

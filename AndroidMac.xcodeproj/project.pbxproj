@@ -245,6 +245,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSCameraUsageDescription = "AndroidMac routes a real webcam into the Android emulator's camera apps when you pick one in Camera sourceâ¦";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "AndroidMac routes your microphone into the Android emulator when an app records audio.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Antigravity";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -324,6 +326,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSCameraUsageDescription = "AndroidMac routes a real webcam into the Android emulator's camera apps when you pick one in Camera sourceâ¦";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "AndroidMac routes your microphone into the Android emulator when an app records audio.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Antigravity";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
