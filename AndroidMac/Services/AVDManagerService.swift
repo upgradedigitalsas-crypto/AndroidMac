@@ -48,14 +48,59 @@ class AVDManagerService {
     /// duplicated keys made the emulator ignore the tuning).
     ///
     /// Safe to call on every launch so AVDs created by earlier versions also
-    /// pick up `hw.keyboard=yes` and `hw.gpu.mode=host`.
+    /// pick up `hw.keyboard=yes` and `hw.gpu.mode=host`. Keys this doesn't own
+    /// (e.g. `hw.camera.*`, set separately via `setCamera`) are left untouched.
     @discardableResult
     func applyHardwareConfig(to avdName: String) -> Bool {
-        let configPath = FileManager.default
+        mergeConfigKeys(for: avdName, overrides: AndroidConfig.avdHardwareConfig)
+    }
+
+    /// Reads the current `hw.camera.back` / `hw.camera.front` values, e.g. to
+    /// preselect the right option in a camera picker. Defaults to `"emulated"`
+    /// (the built-in fake scene) when the key isn't present yet.
+    func currentCameraSelection(for avdName: String) -> (back: String, front: String) {
+        let values = readConfigKeys(for: avdName, keys: ["hw.camera.back", "hw.camera.front"])
+        return (values["hw.camera.back"] ?? "emulated", values["hw.camera.front"] ?? "emulated")
+    }
+
+    /// Point the AVD's back/front camera at a real webcam (from
+    /// `EmulatorService.listWebcams()`, e.g. `"webcam0"` — on macOS this
+    /// includes an iPhone connected via Continuity Camera), `"emulated"` for
+    /// the default virtual scene, or `"none"` to disable. Takes effect on the
+    /// next emulator launch.
+    @discardableResult
+    func setCamera(for avdName: String, back: String, front: String) -> Bool {
+        mergeConfigKeys(for: avdName, overrides: ["hw.camera.back": back, "hw.camera.front": front])
+    }
+
+    // MARK: - config.ini helpers
+
+    private func configPath(for avdName: String) -> URL {
+        FileManager.default
             .homeDirectoryForCurrentUser
             .appendingPathComponent(".android/avd/\(avdName).avd/config.ini")
+    }
 
-        guard let existing = try? String(contentsOf: configPath, encoding: .utf8) else { return false }
+    private func readConfigKeys(for avdName: String, keys: Set<String>) -> [String: String] {
+        guard let existing = try? String(contentsOf: configPath(for: avdName), encoding: .utf8) else {
+            return [:]
+        }
+        var found: [String: String] = [:]
+        for line in existing.split(separator: "\n") {
+            guard let eq = line.firstIndex(of: "=") else { continue }
+            let key = String(line[..<eq]).trimmingCharacters(in: .whitespaces)
+            guard keys.contains(key) else { continue }
+            found[key] = String(line[line.index(after: eq)...]).trimmingCharacters(in: .whitespaces)
+        }
+        return found
+    }
+
+    /// Replaces (never duplicates) the given keys in `config.ini`; every other
+    /// existing line — including keys owned by a different caller — is kept as-is.
+    @discardableResult
+    private func mergeConfigKeys(for avdName: String, overrides: [String: String]) -> Bool {
+        let path = configPath(for: avdName)
+        guard let existing = try? String(contentsOf: path, encoding: .utf8) else { return false }
 
         var pairs: [(String, String)] = []
         var seen = Set<String>()
@@ -67,10 +112,10 @@ class AVDManagerService {
             }
             let key = String(line[..<eq]).trimmingCharacters(in: .whitespaces)
             let value = String(line[line.index(after: eq)...]).trimmingCharacters(in: .whitespaces)
-            if AndroidConfig.avdHardwareConfig[key] != nil { continue }  // will be re-added below
+            if overrides[key] != nil { continue }  // will be re-added below
             if seen.insert(key).inserted { pairs.append((key, value)) }
         }
-        for (key, value) in AndroidConfig.avdHardwareConfig.sorted(by: { $0.key < $1.key }) {
+        for (key, value) in overrides.sorted(by: { $0.key < $1.key }) {
             pairs.append((key, value))
         }
 
@@ -79,7 +124,7 @@ class AVDManagerService {
             .joined(separator: "\n") + "\n"
 
         do {
-            try rendered.write(to: configPath, atomically: true, encoding: .utf8)
+            try rendered.write(to: path, atomically: true, encoding: .utf8)
             return true
         } catch {
             return false

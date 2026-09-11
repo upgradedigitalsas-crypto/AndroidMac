@@ -17,6 +17,7 @@
 		A100000B00000000000A010B /* AndroidConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000C00000000000A010C /* AndroidConfig.swift */; };
 		B2000001000000000000B201 /* CloudSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002000000000000B202 /* CloudSyncService.swift */; };
 		B2000003000000000000B203 /* CloudSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000004000000000000B204 /* CloudSettingsView.swift */; };
+		B2000005000000000000B205 /* CameraSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000006000000000000B206 /* CameraSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,7 @@
 		A100000C00000000000A010C /* AndroidConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AndroidConfig.swift; sourceTree = "<group>"; };
 		B2000002000000000000B202 /* CloudSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncService.swift; sourceTree = "<group>"; };
 		B2000004000000000000B204 /* CloudSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSettingsView.swift; sourceTree = "<group>"; };
+		B2000006000000000000B206 /* CameraSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraSettingsView.swift; sourceTree = "<group>"; };
 		F287475A8E1F6389BC3A48F5 /* AndroidMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AndroidMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -67,6 +69,7 @@
 				6C5223D716EB1C0D20CBF9D4 /* ContentView.swift */,
 				A1000002000000000000A102 /* MainView.swift */,
 				B2000004000000000000B204 /* CloudSettingsView.swift */,
+				B2000006000000000000B206 /* CameraSettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -163,6 +166,7 @@
 				A100000B00000000000A010B /* AndroidConfig.swift in Sources */,
 				B2000001000000000000B201 /* CloudSyncService.swift in Sources */,
 				B2000003000000000000B203 /* CloudSettingsView.swift in Sources */,
+				B2000005000000000000B205 /* CameraSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

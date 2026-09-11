@@ -16,7 +16,8 @@ struct MainView: View {
                 ProgressView("Creating Android device…")
                 Spacer()
             } else if let avd = avdManager.selectedAVD, let emulator = avdManager.emulatorService {
-                EmulatorControlView(emulator: emulator, cloudSync: cloudSync, avdName: avd)
+                EmulatorControlView(
+                    emulator: emulator, cloudSync: cloudSync, avdService: avdManager.service, avdName: avd)
             } else {
                 Spacer()
                 VStack(spacing: 12) {
@@ -57,9 +58,11 @@ struct MainView: View {
 struct EmulatorControlView: View {
     @ObservedObject var emulator: EmulatorService
     @ObservedObject var cloudSync: CloudSyncService
+    let avdService: AVDManagerService?
     let avdName: String
 
     @State private var showFileImporter = false
+    @State private var showCameraSettings = false
     @State private var typeText = ""
     @State private var gsfID: String?
     @State private var googleBusy = false
@@ -70,6 +73,11 @@ struct EmulatorControlView: View {
     var body: some View {
         VStack(spacing: 16) {
             deviceCard
+
+            Button("📷 Camera source…") { showCameraSettings = true }
+                .buttonStyle(.link)
+                .font(.caption)
+                .help("Route a real Mac or iPhone (Continuity Camera) webcam into the Android camera apps.")
 
             if emulator.isRunning {
                 Button("STOP ANDROID") { emulator.stop() }
@@ -107,6 +115,9 @@ struct EmulatorControlView: View {
         .fileImporter(isPresented: $showFileImporter,
                       allowedContentTypes: [UTType(filenameExtension: "apk") ?? .item]) { result in
             if case .success(let url) = result { installAPK(url: url) }
+        }
+        .sheet(isPresented: $showCameraSettings) {
+            CameraSettingsView(emulator: emulator, avdService: avdService, avdName: avdName)
         }
     }
 

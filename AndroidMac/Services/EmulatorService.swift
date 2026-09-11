@@ -228,4 +228,36 @@ class EmulatorService: ObservableObject {
             self.status = "Stopped"
         }
     }
+
+    // MARK: - Real cameras
+
+    /// Physical cameras macOS can see — the Mac's built-in/USB webcams, and an
+    /// iPhone if Continuity Camera is on (System Settings → General → AirDrop
+    /// & Handoff, both devices signed into the same Apple ID, Wi-Fi+Bluetooth
+    /// on). This is a standalone probe: it doesn't need the emulator running.
+    func listWebcams() async -> [Webcam] {
+        guard let result = try? await ProcessRunner.runCommand(
+            emulator, arguments: ["-webcam-list"],
+            environment: AndroidEnvironment.toolchain(sdkRoot: sdkRoot), timeout: 15
+        ) else { return [] }
+
+        guard let regex = try? NSRegularExpression(
+            pattern: #"Camera '([^']+)' is connected to device '([^']+)'"#
+        ) else { return [] }
+        let text = result.stdout
+        var webcams: [Webcam] = []
+        regex.enumerateMatches(in: text, range: NSRange(text.startIndex..., in: text)) { match, _, _ in
+            guard let match,
+                  let idRange = Range(match.range(at: 1), in: text),
+                  let nameRange = Range(match.range(at: 2), in: text)
+            else { return }
+            webcams.append(Webcam(id: String(text[idRange]), deviceName: String(text[nameRange])))
+        }
+        return webcams
+    }
+}
+
+struct Webcam: Identifiable, Hashable {
+    let id: String          // e.g. "webcam0" — what goes into hw.camera.back/front
+    let deviceName: String  // e.g. "FaceTime HD Camera" or "Pablo's iPhone"
 }

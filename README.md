@@ -30,6 +30,11 @@ for the official Android Emulator on Apple Silicon (M-series / ARM64).
 - Capture screenshots straight to your Desktop.
 - Install APKs via file selection.
 - Play Store login and app data persist across sessions (Quick Boot snapshots).
+- **Use a real camera in Android apps** ("📷 Camera source…" under the device
+  card): routes any macOS-visible webcam — the Mac's built-in camera, or your
+  **iPhone via Continuity Camera** — into the guest's back/front camera, so any
+  Android app that opens the camera (not just AndroidMac's own screenshot
+  button) sees a live real feed instead of the emulator's fake scene.
 - **Cloud mirror + remote control** (optional, gear icon in the header): pushes
   the latest screenshot, installed apps, and detected accounts to an
   [`androidmac-cloud`](https://github.com/upgradedigitalsas-crypto/androidmac-cloud)
@@ -115,8 +120,33 @@ The Mac pushes a screenshot + app/account inventory on every manual **Sync
 now** and after each remote action, and polls for queued commands every ~12s
 while enabled — no inbound connections, no port forwarding.
 
+## Using a real camera (Mac or iPhone)
+
+1. To use your **iPhone's** camera: System Settings → General → AirDrop &
+   Handoff → turn on **Continuity Camera**; sign in to the same Apple ID on
+   both devices, keep Wi-Fi + Bluetooth on, and keep the iPhone nearby
+   (plugged in or unlocked works most reliably). Once on, the iPhone shows up
+   as a normal camera device to macOS — no extra software needed.
+2. In AndroidMac, click **📷 Camera source…** → **Refresh list** (should show
+   your Mac's built-in camera and, if enabled, the iPhone) → pick it for the
+   back and/or front camera → **Apply**.
+3. Start (or restart) Android. Any app that opens the camera — including the
+   stock Camera app — now shows the real live feed.
+
+This is separate from the Cloud/PWA feature above and doesn't need it: it
+works purely on this Mac. It also doesn't require the emulator to already be
+running — set it before the first boot and it'll be used from the start.
+
 ## Troubleshooting
 
+- **iPhone doesn't show up in Camera source** — Continuity Camera needs both
+  devices on the same Apple ID, Wi-Fi + Bluetooth on, and the iPhone unlocked
+  or nearby; it can take a few seconds to appear after enabling it. Click
+  **Refresh list** again. If it still doesn't appear, `emulator -webcam-list`
+  in Terminal shows exactly what macOS is exposing.
+- **Camera change didn't take effect** — it's read from `config.ini` at
+  launch, not hot-swappable; use **Restart now** in the Camera sheet, or a
+  full Stop → Start.
 - **Stuck on "Android environment incomplete"** — the setup step now always
   clears its spinner and shows the underlying error with a **Retry** button.
   The most common cause is a missing JDK: `brew install openjdk@17`.
