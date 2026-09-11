@@ -90,6 +90,34 @@ class ADBService {
         _ = try? await run(["shell", "pm", "clear", "com.android.vending"], timeout: 20)
         try await run(["reboot"], timeout: 20)
     }
+
+    // MARK: Cloud sync (best-effort inventory, used by CloudSyncService)
+
+    /// User-installed package names (excludes system packages).
+    func listThirdPartyPackages() async -> [String] {
+        guard let r = try? await run(["shell", "pm", "list", "packages", "-3"], timeout: 20),
+              r.isSuccess else { return [] }
+        return r.stdout.split(separator: "\n").compactMap { line in
+            line.hasPrefix("package:") ? String(line.dropFirst("package:".count)) : nil
+        }
+    }
+
+    /// Best-effort account names/emails registered on the device (no credentials).
+    /// Returns an empty list if `dumpsys account` isn't readable — never throws.
+    func listAccountNames() async -> [String] {
+        guard let r = try? await run(["shell", "dumpsys", "account"], timeout: 20),
+              r.isSuccess else { return [] }
+        guard let regex = try? NSRegularExpression(pattern: #"name=([^,}\s]+)"#) else { return [] }
+        let text = r.stdout
+        var seen = Set<String>()
+        var names: [String] = []
+        regex.enumerateMatches(in: text, range: NSRange(text.startIndex..., in: text)) { match, _, _ in
+            guard let match, let range = Range(match.range(at: 1), in: text) else { return }
+            let name = String(text[range])
+            if seen.insert(name).inserted { names.append(name) }
+        }
+        return names
+    }
 }
 
 @MainActor

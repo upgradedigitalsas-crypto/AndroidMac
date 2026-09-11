@@ -3,6 +3,8 @@ import UniformTypeIdentifiers
 
 struct MainView: View {
     @ObservedObject var avdManager: AVDManagerViewModel
+    @ObservedObject var cloudSync: CloudSyncService
+    @State private var showCloudSettings = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -14,7 +16,7 @@ struct MainView: View {
                 ProgressView("Creating Android device…")
                 Spacer()
             } else if let avd = avdManager.selectedAVD, let emulator = avdManager.emulatorService {
-                EmulatorControlView(emulator: emulator, avdName: avd)
+                EmulatorControlView(emulator: emulator, cloudSync: cloudSync, avdName: avd)
             } else {
                 Spacer()
                 VStack(spacing: 12) {
@@ -29,6 +31,9 @@ struct MainView: View {
                 Spacer()
             }
         }
+        .sheet(isPresented: $showCloudSettings) {
+            CloudSettingsView(cloudSync: cloudSync)
+        }
     }
 
     private var header: some View {
@@ -36,8 +41,12 @@ struct MainView: View {
             Text("Android Phone")
                 .font(.title2.bold())
             Spacer()
-            Image(systemName: "gearshape")
-                .foregroundColor(.secondary)
+            Button { showCloudSettings = true } label: {
+                Image(systemName: cloudSync.isEnabled ? "icloud.fill" : "gearshape")
+                    .foregroundColor(cloudSync.isEnabled ? .accentColor : .secondary)
+            }
+            .buttonStyle(.plain)
+            .help(cloudSync.isEnabled ? "AndroidMac Cloud is on" : "Cloud & settings")
         }
         .padding()
         .background(Color(NSColor.windowBackgroundColor))
@@ -47,6 +56,7 @@ struct MainView: View {
 /// Everything that needs to react live to the emulator's state.
 struct EmulatorControlView: View {
     @ObservedObject var emulator: EmulatorService
+    @ObservedObject var cloudSync: CloudSyncService
     let avdName: String
 
     @State private var showFileImporter = false
@@ -87,6 +97,10 @@ struct EmulatorControlView: View {
                 googleSignInBar
                 Divider()
                 navigationBar
+                if cloudSync.isEnabled {
+                    Divider()
+                    cloudBar
+                }
             }
         }
         .padding()
@@ -171,6 +185,27 @@ struct EmulatorControlView: View {
             Button("APK") { showFileImporter = true }
                 .buttonStyle(.bordered)
                 .help("Install an .apk on the device")
+        }
+    }
+
+    private var cloudBar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "icloud.fill").foregroundColor(.accentColor).font(.caption)
+            if cloudSync.isSyncing {
+                Text("Syncing…").font(.caption2).foregroundColor(.secondary)
+            } else if let error = cloudSync.lastError {
+                Text(error).font(.caption2).foregroundColor(.red).lineLimit(1)
+            } else if let last = cloudSync.lastSyncAt {
+                Text("Synced \(last.formatted(date: .omitted, time: .shortened))")
+                    .font(.caption2).foregroundColor(.secondary)
+            } else {
+                Text("Not synced yet").font(.caption2).foregroundColor(.secondary)
+            }
+            Spacer()
+            Button("Sync now") { Task { await cloudSync.syncNow() } }
+                .buttonStyle(.link)
+                .font(.caption)
+                .disabled(cloudSync.isSyncing)
         }
     }
 

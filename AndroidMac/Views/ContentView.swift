@@ -4,17 +4,20 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     @StateObject private var sdkManager = AndroidSDKManager.shared
     @StateObject private var avdManager = AVDManagerViewModel()
+    @StateObject private var cloudSync = CloudSyncService()
 
     var body: some View {
         VStack {
             if !sdkManager.isSDKInstalled {
                 setupView
             } else {
-                MainView(avdManager: avdManager)
+                MainView(avdManager: avdManager, cloudSync: cloudSync)
             }
         }
         .frame(width: 400, height: 520)
         .onAppear {
+            cloudSync.avdManager = avdManager
+            cloudSync.startPolling()
             if sdkManager.isSDKInstalled {
                 avdManager.loadAVDs(sdkRoot: sdkManager.sdkRoot, apiLevel: sdkManager.installedAPILevel)
             }

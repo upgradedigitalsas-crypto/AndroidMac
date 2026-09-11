@@ -30,6 +30,17 @@ for the official Android Emulator on Apple Silicon (M-series / ARM64).
 - Capture screenshots straight to your Desktop.
 - Install APKs via file selection.
 - Play Store login and app data persist across sessions (Quick Boot snapshots).
+- **Cloud mirror + remote control** (optional, gear icon in the header): pushes
+  the latest screenshot, installed apps, and detected accounts to an
+  [`androidmac-cloud`](https://github.com/upgradedigitalsas-crypto/androidmac-cloud)
+  deployment, and polls it for queued actions (type text, Back/Home/Recents,
+  install an APK by URL, start/stop, cold boot) so you can drive the same
+  emulator from a login-protected web dashboard or an installable iPhone PWA.
+  The Mac only ever makes outbound HTTPS calls — nothing is exposed locally.
+  This mirrors data/actions for the one emulator running on this Mac; it is
+  **not** a second, independent Android instance (a PWA cannot execute Android
+  apps on its own — see that repo's README for why and what this gives you
+  instead).
 
 ## Performance tuning
 
@@ -88,6 +99,21 @@ git push origin v1.1.0
 For a signed & notarized build, add `DEVELOPMENT_TEAM` / a Developer ID identity
 and an `xcrun notarytool` step; the ad-hoc signature in the workflow is enough
 for local use (`xattr -dr com.apple.quarantine AndroidMac.app` on first open).
+
+## Setting up AndroidMac Cloud (optional)
+
+1. Deploy [`androidmac-cloud`](https://github.com/upgradedigitalsas-crypto/androidmac-cloud)
+   to Vercel and finish its one-time setup (connect Blob storage, set
+   `OWNER_EMAIL`/`OWNER_PASSWORD_HASH`/`SESSION_SECRET`/`DEVICE_TOKEN`) — see
+   that repo's README.
+2. In AndroidMac, click the gear/cloud icon in the header → paste the
+   deployment URL and the `DEVICE_TOKEN` you generated → **Save & Enable**.
+3. Open the deployment URL on your iPhone → sign in → Safari **Share** →
+   **Add to Home Screen**.
+
+The Mac pushes a screenshot + app/account inventory on every manual **Sync
+now** and after each remote action, and polls for queued commands every ~12s
+while enabled — no inbound connections, no port forwarding.
 
 ## Troubleshooting
 

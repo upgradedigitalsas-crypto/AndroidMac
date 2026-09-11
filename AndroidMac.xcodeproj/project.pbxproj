@@ -15,6 +15,8 @@
 		A1000007000000000000A107 /* EmulatorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000008000000000000A108 /* EmulatorService.swift */; };
 		A1000009000000000000A109 /* ProcessRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000A00000000000A010A /* ProcessRunner.swift */; };
 		A100000B00000000000A010B /* AndroidConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000C00000000000A010C /* AndroidConfig.swift */; };
+		B2000001000000000000B201 /* CloudSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002000000000000B202 /* CloudSyncService.swift */; };
+		B2000003000000000000B203 /* CloudSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000004000000000000B204 /* CloudSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +28,8 @@
 		A1000008000000000000A108 /* EmulatorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmulatorService.swift; sourceTree = "<group>"; };
 		A100000A00000000000A010A /* ProcessRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessRunner.swift; sourceTree = "<group>"; };
 		A100000C00000000000A010C /* AndroidConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AndroidConfig.swift; sourceTree = "<group>"; };
+		B2000002000000000000B202 /* CloudSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncService.swift; sourceTree = "<group>"; };
+		B2000004000000000000B204 /* CloudSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSettingsView.swift; sourceTree = "<group>"; };
 		F287475A8E1F6389BC3A48F5 /* AndroidMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AndroidMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -62,6 +66,7 @@
 			children = (
 				6C5223D716EB1C0D20CBF9D4 /* ContentView.swift */,
 				A1000002000000000000A102 /* MainView.swift */,
+				B2000004000000000000B204 /* CloudSettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -72,6 +77,7 @@
 				A1000004000000000000A104 /* AndroidSDKManager.swift */,
 				A1000006000000000000A106 /* AVDManagerService.swift */,
 				A1000008000000000000A108 /* EmulatorService.swift */,
+				B2000002000000000000B202 /* CloudSyncService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -155,6 +161,8 @@
 				A1000007000000000000A107 /* EmulatorService.swift in Sources */,
 				A1000009000000000000A109 /* ProcessRunner.swift in Sources */,
 				A100000B00000000000A010B /* AndroidConfig.swift in Sources */,
+				B2000001000000000000B201 /* CloudSyncService.swift in Sources */,
+				B2000003000000000000B203 /* CloudSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
