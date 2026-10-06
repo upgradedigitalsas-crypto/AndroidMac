@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag to build (e.g. v1.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: v
+        run: |
+          REF="${{ github.event.inputs.version || github.ref_name }}"
+          echo "version=${REF#v}" >> "$GITHUB_OUTPUT"
+          echo "tag=${REF}" >> "$GITHUB_OUTPUT"
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Build AndroidMac.app
+        run: |
+          xcodegen generate
+          xcodebuild -project AndroidMac.xcodeproj -scheme AndroidMac \
+            -configuration Release -destination 'generic/platform=macOS' \
+            -derivedDataPath .build \
+            CODE_SIGNING_ALLOWED=NO build
+          mkdir -p dist
+          APP=$(find .build -name 'AndroidMac.app' -type d | head -n1)
+          cp -R "$APP" dist/AndroidMac.app
+          /usr/bin/codesign --force --deep -s - dist/AndroidMac.app
+
+      - name: Package (zip + dmg)
+        run: |
+          cd dist
+          ditto -c -k --sequesterRsrc --keepParent AndroidMac.app "AndroidMac-${{ steps.v.outputs.version }}.zip"
+          hdiutil create -volname "AndroidMac" -srcfolder AndroidMac.app -ov -format UDZO \
+            "AndroidMac-${{ steps.v.outputs.version }}.dmg"
+          shasum -a 256 AndroidMac-*.zip AndroidMac-*.dmg > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.v.outputs.tag }}
+          name: AndroidMac ${{ steps.v.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            dist/AndroidMac-*.zip
+            dist/AndroidMac-*.dmg
+            dist/SHA256SUMS.txt

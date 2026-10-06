@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcode-select -p
+          swift --version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project
+        run: xcodegen generate
+
+      - name: Build (Release)
+        run: |
+          xcodebuild -project AndroidMac.xcodeproj -scheme AndroidMac \
+            -configuration Release -destination 'generic/platform=macOS' \
+            -derivedDataPath .build \
+            CODE_SIGNING_ALLOWED=NO build
+
+      - name: Smoke-check bundle
+        run: |
+          APP=$(find .build -name 'AndroidMac.app' -type d | head -n1)
+          test -x "$APP/Contents/MacOS/AndroidMac"
+          file "$APP/Contents/MacOS/AndroidMac"

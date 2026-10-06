@@ -9,11 +9,29 @@
 /* Begin PBXBuildFile section */
 		6A262846FCB30E7CC8B12CB5 /* AndroidMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAAAB4DE1E7D0CE22D1A1A0 /* AndroidMacApp.swift */; };
 		7E98751573494699636E89D1 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C5223D716EB1C0D20CBF9D4 /* ContentView.swift */; };
+		A1000001000000000000A101 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000000000000A102 /* MainView.swift */; };
+		A1000003000000000000A103 /* AndroidSDKManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004000000000000A104 /* AndroidSDKManager.swift */; };
+		A1000005000000000000A105 /* AVDManagerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000000000000A106 /* AVDManagerService.swift */; };
+		A1000007000000000000A107 /* EmulatorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000008000000000000A108 /* EmulatorService.swift */; };
+		A1000009000000000000A109 /* ProcessRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000A00000000000A010A /* ProcessRunner.swift */; };
+		A100000B00000000000A010B /* AndroidConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000C00000000000A010C /* AndroidConfig.swift */; };
+		B2000001000000000000B201 /* CloudSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002000000000000B202 /* CloudSyncService.swift */; };
+		B2000003000000000000B203 /* CloudSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000004000000000000B204 /* CloudSettingsView.swift */; };
+		B2000005000000000000B205 /* CameraSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000006000000000000B206 /* CameraSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		6C5223D716EB1C0D20CBF9D4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		CBAAAB4DE1E7D0CE22D1A1A0 /* AndroidMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AndroidMacApp.swift; sourceTree = "<group>"; };
+		A1000002000000000000A102 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		A1000004000000000000A104 /* AndroidSDKManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AndroidSDKManager.swift; sourceTree = "<group>"; };
+		A1000006000000000000A106 /* AVDManagerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVDManagerService.swift; sourceTree = "<group>"; };
+		A1000008000000000000A108 /* EmulatorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmulatorService.swift; sourceTree = "<group>"; };
+		A100000A00000000000A010A /* ProcessRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessRunner.swift; sourceTree = "<group>"; };
+		A100000C00000000000A010C /* AndroidConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AndroidConfig.swift; sourceTree = "<group>"; };
+		B2000002000000000000B202 /* CloudSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncService.swift; sourceTree = "<group>"; };
+		B2000004000000000000B204 /* CloudSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSettingsView.swift; sourceTree = "<group>"; };
+		B2000006000000000000B206 /* CameraSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraSettingsView.swift; sourceTree = "<group>"; };
 		F287475A8E1F6389BC3A48F5 /* AndroidMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AndroidMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -23,6 +41,8 @@
 			children = (
 				AAA25C15A734CD5D52E96634 /* App */,
 				C749834AEB3EDB9DAB28E11C /* Views */,
+				A100001000000000000A0110 /* Services */,
+				A100001100000000000A0111 /* Utilities */,
 			);
 			path = AndroidMac;
 			sourceTree = "<group>";
@@ -47,8 +67,31 @@
 			isa = PBXGroup;
 			children = (
 				6C5223D716EB1C0D20CBF9D4 /* ContentView.swift */,
+				A1000002000000000000A102 /* MainView.swift */,
+				B2000004000000000000B204 /* CloudSettingsView.swift */,
+				B2000006000000000000B206 /* CameraSettingsView.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		A100001000000000000A0110 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A1000004000000000000A104 /* AndroidSDKManager.swift */,
+				A1000006000000000000A106 /* AVDManagerService.swift */,
+				A1000008000000000000A108 /* EmulatorService.swift */,
+				B2000002000000000000B202 /* CloudSyncService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A100001100000000000A0111 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				A100000A00000000000A010A /* ProcessRunner.swift */,
+				A100000C00000000000A010C /* AndroidConfig.swift */,
+			);
+			path = Utilities;
 			sourceTree = "<group>";
 		};
 		D6842F62DCC1E689FB9B8599 /* Products */ = {
@@ -57,13 +100,6 @@
 				F287475A8E1F6389BC3A48F5 /* AndroidMac.app */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		"TEMP_FCBA3935-409D-4A35-9BD9-A7ED0A93DC67" /* AndroidMac */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = AndroidMac;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -122,6 +158,15 @@
 			files = (
 				6A262846FCB30E7CC8B12CB5 /* AndroidMacApp.swift in Sources */,
 				7E98751573494699636E89D1 /* ContentView.swift in Sources */,
+				A1000001000000000000A101 /* MainView.swift in Sources */,
+				A1000003000000000000A103 /* AndroidSDKManager.swift in Sources */,
+				A1000005000000000000A105 /* AVDManagerService.swift in Sources */,
+				A1000007000000000000A107 /* EmulatorService.swift in Sources */,
+				A1000009000000000000A109 /* ProcessRunner.swift in Sources */,
+				A100000B00000000000A010B /* AndroidConfig.swift in Sources */,
+				B2000001000000000000B201 /* CloudSyncService.swift in Sources */,
+				B2000003000000000000B203 /* CloudSettingsView.swift in Sources */,
+				B2000005000000000000B205 /* CameraSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -199,6 +244,9 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSCameraUsageDescription = "AndroidMac routes a real webcam into the Android emulator's camera apps when you pick one in Camera sourceâ¦";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "AndroidMac routes your microphone into the Android emulator when an app records audio.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Antigravity";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -206,6 +254,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.antigravity.AndroidMac;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
@@ -276,6 +325,9 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSCameraUsageDescription = "AndroidMac routes a real webcam into the Android emulator's camera apps when you pick one in Camera sourceâ¦";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "AndroidMac routes your microphone into the Android emulator when an app records audio.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Antigravity";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -283,6 +335,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.antigravity.AndroidMac;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
