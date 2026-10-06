@@ -32,3 +32,10 @@
 - **Framework:** SwiftUI with MVVM; `@MainActor` on the observable services/view-models.
 - **Concurrency:** Swift `async/await` and `Task`; child processes are managed off the main actor.
 - **Build System:** `XcodeGen` (`project.yml`) is the source of truth for the Xcode project; a committed `.xcodeproj` and a `swiftc`-based `build.sh` cover environments without `xcodegen` or a full Xcode.
+
+## 7. Sessions (patrones)
+- `AndroidProfile` (`main` / `clean`) maps each session to its **own AVD**: `Antigravity_Phone` and `Antigravity_Phone_Clean`. Separate AVDs (not `-wipe-data` on one AVD) guarantee wiping the clean session can never erase the main one.
+- The clean profile launches with `-wipe-data -no-snapshot-load -no-snapshot-save`: factory-fresh every start, nothing resumed or persisted. The main profile never receives these flags (`wipeData` is only set from `AndroidProfile.wipesOnLaunch`).
+- `createAVD(named:)` has no `--force` and is only called for an AVD missing from `avdmanager list`, so an existing device (and its data) is never overwritten.
+- Only one emulator runs at a time (`adb` calls aren't device-scoped), so the selector is locked while running. The selection persists in `UserDefaults`.
+- Cloud `start`/`cold_boot` commands go through `AVDManagerViewModel.startSelected`, so they respect the selected session.

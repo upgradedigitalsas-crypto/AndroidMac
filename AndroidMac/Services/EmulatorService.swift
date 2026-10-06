@@ -151,9 +151,11 @@ class EmulatorService: ObservableObject {
 
     /// - Parameter coldBoot: ignore any saved snapshot for this run. Use it when
     ///   the emulator window opens blank/white (a poisoned GPU snapshot).
-    func start(avdName: String, coldBoot: Bool = false) {
+    /// - Parameter wipeData: erase this AVD's userdata first and persist nothing
+    ///   (the "Patrón 2 · En cero" session). Never use on the main profile.
+    func start(avdName: String, coldBoot: Bool = false, wipeData: Bool = false) {
         guard !isRunning else { return }
-        status = coldBoot ? "Cold booting emulator…" : "Starting emulator…"
+        status = wipeData ? "Starting from zero…" : (coldBoot ? "Cold booting emulator…" : "Starting emulator…")
         isRunning = true
         lastError = nil
 
@@ -163,7 +165,7 @@ class EmulatorService: ObservableObject {
 
         let emulatorURL = emulator
         let env = AndroidEnvironment.toolchain(sdkRoot: sdkRoot)
-        let args = ["-avd", avdName] + AndroidConfig.emulatorLaunchArgs(coldBoot: coldBoot)
+        let args = ["-avd", avdName] + AndroidConfig.emulatorLaunchArgs(coldBoot: coldBoot, wipeData: wipeData)
 
         let proc = Process()
         proc.executableURL = emulatorURL

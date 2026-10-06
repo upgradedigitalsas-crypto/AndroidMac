@@ -27,12 +27,19 @@ class AVDManagerService {
     }
 
     func createDefaultAVD() async throws {
+        try await createAVD(named: AndroidConfig.avdName)
+    }
+
+    /// Create a Play Store AVD. Deliberately no `--force`: this must never
+    /// overwrite an existing device (and the user's data in it). Callers check
+    /// `listAVDs()` first and only create what's missing.
+    func createAVD(named name: String) async throws {
         let package = AndroidConfig.systemImage(api: apiLevel)
 
         let result = try await ProcessRunner.runShell(
             "echo no | \"\(avdmanager.path)\" create avd "
-            + "-n \"\(AndroidConfig.avdName)\" -k \"\(package)\" "
-            + "-d \"\(AndroidConfig.deviceProfile)\" --force",
+            + "-n \"\(name)\" -k \"\(package)\" "
+            + "-d \"\(AndroidConfig.deviceProfile)\"",
             environment: AndroidEnvironment.toolchain(sdkRoot: sdkRoot),
             timeout: 120)
 
@@ -40,7 +47,7 @@ class AVDManagerService {
             throw ProcessError.executionFailed(result.exitCode, result.stdout, result.stderr)
         }
 
-        applyHardwareConfig(to: AndroidConfig.avdName)
+        applyHardwareConfig(to: name)
     }
 
     /// Merge the performance / keyboard settings into an AVD's `config.ini`,

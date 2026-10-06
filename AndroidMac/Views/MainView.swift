@@ -11,13 +11,20 @@ struct MainView: View {
             header
             Divider()
 
+            if let emulator = avdManager.emulatorService {
+                ProfilePicker(avdManager: avdManager, emulator: emulator)
+                Divider()
+            }
+
             if avdManager.isCreating {
                 Spacer()
                 ProgressView("Creating Android device…")
                 Spacer()
             } else if let avd = avdManager.selectedAVD, let emulator = avdManager.emulatorService {
                 EmulatorControlView(
-                    emulator: emulator, cloudSync: cloudSync, avdService: avdManager.service, avdName: avd)
+                    emulator: emulator, cloudSync: cloudSync, avdService: avdManager.service,
+                    avdName: avd, profile: avdManager.profile)
+                    .id(avd)
             } else {
                 Spacer()
                 VStack(spacing: 12) {
@@ -54,12 +61,45 @@ struct MainView: View {
     }
 }
 
+/// Patrón 1 (con datos) / Patrón 2 (en cero) selector.
+struct ProfilePicker: View {
+    @ObservedObject var avdManager: AVDManagerViewModel
+    @ObservedObject var emulator: EmulatorService
+
+    private var locked: Bool { emulator.isRunning || avdManager.isCreating }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Picker("", selection: Binding(
+                get: { avdManager.profile },
+                set: { avdManager.selectProfile($0) })
+            ) {
+                ForEach(AndroidProfile.allCases) { p in
+                    Text("\(p.title) · \(p.subtitle)").tag(p)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .disabled(locked)
+
+            Text(emulator.isRunning
+                 ? "Detén Android para cambiar de patrón."
+                 : avdManager.profile.detail)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+    }
+}
+
 /// Everything that needs to react live to the emulator's state.
 struct EmulatorControlView: View {
     @ObservedObject var emulator: EmulatorService
     @ObservedObject var cloudSync: CloudSyncService
     let avdService: AVDManagerService?
     let avdName: String
+    let profile: AndroidProfile
 
     @State private var showFileImporter = false
     @State private var showCameraSettings = false
@@ -84,11 +124,17 @@ struct EmulatorControlView: View {
                     .buttonStyle(.borderedProminent).tint(.red)
             } else {
                 VStack(spacing: 6) {
-                    Button("START ANDROID") { emulator.start(avdName: avdName) }
-                        .buttonStyle(.borderedProminent).tint(.green)
-                    Button("Cold boot") { emulator.start(avdName: avdName, coldBoot: true) }
-                        .buttonStyle(.link)
-                        .help("Start ignoring the saved snapshot — use this if the screen opens blank/white.")
+                    Button(profile.wipesOnLaunch ? "START FROM ZERO" : "START ANDROID") {
+                        emulator.start(avdName: avdName, wipeData: profile.wipesOnLaunch)
+                    }
+                    .buttonStyle(.borderedProminent).tint(profile.wipesOnLaunch ? .orange : .green)
+                    // Patrón 2 already ignores snapshots on every start, so cold boot
+                    // would be redundant there.
+                    if !profile.wipesOnLaunch {
+                        Button("Cold boot") { emulator.start(avdName: avdName, coldBoot: true) }
+                            .buttonStyle(.link)
+                            .help("Start ignoring the saved snapshot — use this if the screen opens blank/white.")
+                    }
                 }
             }
 

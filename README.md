@@ -22,6 +22,13 @@ for the official Android Emulator on Apple Silicon (M-series / ARM64).
   only if you want to pin a specific version.
 - Creates and manages an AVD tuned for performance on Apple Silicon.
 - Boots the emulator and verifies `sys.boot_completed` via `adb`.
+- **Two sessions (patrones).** A selector at the top switches between
+  **Patrón 1 · Con datos** (`Antigravity_Phone` — keeps your Google account,
+  apps and files, resumes via Quick Boot) and **Patrón 2 · En cero**
+  (`Antigravity_Phone_Clean` — a separate AVD that is wiped and boots as a
+  brand-new Android every time you start it). They are independent AVDs, so
+  Patrón 2 can never touch Patrón 1's data. Switching is disabled while Android
+  is running (one emulator at a time). Patrón 2 is created on first use.
 - **Type from your Mac keyboard.** The AVD is created with `hw.keyboard=yes`, so
   the emulator window accepts your physical keyboard directly. The app also has
   an in-window text field that injects text/Enter over `adb` even when the

@@ -184,15 +184,15 @@ final class CloudSyncService: ObservableObject {
 
         switch command.type {
         case "start":
-            guard let avd = avdManager.selectedAVD else { return (false, "No AVD selected.") }
-            emulator?.start(avdName: avd)
-            return (true, "Starting.")
+            guard avdManager.selectedAVD != nil else { return (false, "No AVD selected.") }
+            avdManager.startSelected()
+            return (true, avdManager.profile.wipesOnLaunch ? "Starting \(avdManager.profile.title) from zero." : "Starting.")
         case "stop":
             emulator?.stop()
             return (true, "Stopping.")
         case "cold_boot":
-            guard let avd = avdManager.selectedAVD else { return (false, "No AVD selected.") }
-            emulator?.start(avdName: avd, coldBoot: true)
+            guard avdManager.selectedAVD != nil else { return (false, "No AVD selected.") }
+            avdManager.startSelected(coldBoot: true)
             return (true, "Cold booting.")
         case "key_back":
             try? await emulator?.adbService.sendKeyEvent(4)

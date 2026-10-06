@@ -26,7 +26,11 @@ enum AndroidConfig {
 
     // MARK: AVD
 
+    /// Patrón 1 — the long-lived AVD that keeps every login, app and file.
+    /// (Name kept from earlier versions so existing data is picked up as-is.)
     static let avdName = "Antigravity_Phone"
+    /// Patrón 2 — a second, independent AVD that always starts from zero.
+    static let cleanAvdName = "Antigravity_Phone_Clean"
     /// `pixel` is guaranteed to exist in every `avdmanager` device list.
     static let deviceProfile = "pixel"
 
@@ -96,7 +100,7 @@ enum AndroidConfig {
     /// inherits the host's DNS, and split-tunnel VPNs / corporate resolvers are
     /// the usual reason Google sign-in fails with "couldn't communicate with
     /// Google servers".
-    static func emulatorLaunchArgs(coldBoot: Bool = false) -> [String] {
+    static func emulatorLaunchArgs(coldBoot: Bool = false, wipeData: Bool = false) -> [String] {
         var args = [
             "-gpu", gpuMode,
             "-accel", "on",
@@ -111,9 +115,54 @@ enum AndroidConfig {
             // opens blank/white because a broken GPU state got snapshotted.
             args += ["-no-snapshot-load"]
         }
+        if wipeData {
+            // Factory-fresh session: erase this AVD's userdata, don't resume or
+            // persist any snapshot. Only ever passed for the "clean" profile.
+            args += ["-wipe-data", "-no-snapshot-load", "-no-snapshot-save"]
+        }
         if enableVirtualBluetooth {
             args += ["-feature", "Bluetooth"]
         }
         return args
     }
+}
+
+
+/// The two launch sessions ("patrones"). Each one is its own AVD, so their
+/// data never mixes — wiping Patrón 2 can't touch Patrón 1.
+enum AndroidProfile: String, CaseIterable, Identifiable {
+    case main
+    case clean
+
+    var id: String { rawValue }
+
+    var avdName: String {
+        switch self {
+        case .main: return AndroidConfig.avdName
+        case .clean: return AndroidConfig.cleanAvdName
+        }
+    }
+
+    var title: String { self == .main ? "Patrón 1" : "Patrón 2" }
+    var subtitle: String { self == .main ? "Con datos" : "En cero" }
+
+    var detail: String {
+        switch self {
+        case .main:
+            return "Conserva tu cuenta de Google, apps y archivos entre sesiones."
+        case .clean:
+            return "Android nuevo de fábrica: se borra y arranca en cero cada vez que lo inicias."
+        }
+    }
+
+    /// Whether every launch of this profile erases its own userdata first.
+    var wipesOnLaunch: Bool { self == .clean }
+
+    private static let defaultsKey = "androidmac.profile"
+
+    static func stored() -> AndroidProfile {
+        UserDefaults.standard.string(forKey: defaultsKey).flatMap(AndroidProfile.init(rawValue:)) ?? .main
+    }
+
+    func store() { UserDefaults.standard.set(rawValue, forKey: Self.defaultsKey) }
 }
